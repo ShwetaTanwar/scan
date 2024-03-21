@@ -1,87 +1,83 @@
-name: Release Workflow
+name: Build and Release
 
 on:
   push:
     branches:
-      - main
+      - initial
 
 jobs:
   build:
     name: Build Binaries
     runs-on: ubuntu-latest
-
+    
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    - name: Setup Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: 1.21.5
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.21.5
 
-    - name: Install Dependencies
-      run: |
-        go mod tidy
-        go mod download
+      - name: Build for Linux
+        run: go build -o initz_linux 
 
-    - name: Build Linux Binary
-      run: GOOS=linux GOARCH=amd64 go build -o initz_linux  main.go
+      - name: Build for Windows
+        run: GOOS=windows GOARCH=amd64 go build -o initz_windows.exe 
 
-    - name: Build Windows Binary
-      run: GOOS=windows GOARCH=amd64 go build -o initz_windows.exe main.go
-
-    - name: Archive Artifacts
-      uses: actions/upload-artifact@v2
-      with:
-        name: binaries
-        path: |
-          initz_linux
-          initz_windows.exe
+      - name: Archive binaries
+        uses: actions/upload-artifact@v2
+        with:
+          name: binaries
+          path: |
+            ./initz_linux
+            ./initz_windows.exe
 
   release:
     name: Create Release
     needs: build
     runs-on: ubuntu-latest
-
+    if: github.ref == 'refs/heads/initial' && github.event_name == 'push'
+    
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    - name: Download Artifacts
-      uses: actions/download-artifact@v2
-      with:
-        name: binaries
-        path: .
+      - name: Download binaries
+        uses: actions/download-artifact@v2
+        with:
+          name: binaries
+          path: ./binaries
 
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: v1.0.0
-        release_name: Release v1.0.0
-        body: |
-          Describe your release here.
-        draft: false
-        prerelease: false
+      - name: Create Release
+        id: create
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v0.3.0-alpha-2
+          release_name: Release v0.3.0-alpha-2
+          body: |
+            Release description goes here.
+          draft: false
+          prerelease: false
 
-    - name: Upload Linux Binary
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./initz_linux
-        asset_name: initz_linux
-        asset_content_type: application/octet-stream
+      - name: Upload Linux Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create.outputs.upload_url }}
+          asset_path: ./binaries/initz_linux
+          asset_name: initz_linux
+          asset_content_type: application/octet-stream
 
-    - name: Upload Windows Binary
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./initz_windows.exe
-        asset_name: initz_windows.exe
-        asset_content_type: application/octet-stream
+      - name: Upload Windows Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create.outputs.upload_url }}
+          asset_path: ./binaries/initz_windows.exe
+          asset_name: initz_windows.exe
+          asset_content_type: application/octet-stream
