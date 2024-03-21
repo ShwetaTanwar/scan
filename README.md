@@ -1,0 +1,1 @@
+Initiate a scan to check exposed application secrets,such as API tokens,passwords etc.
