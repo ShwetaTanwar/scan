@@ -3,7 +3,7 @@ name: Build and Release
 on:
   push:
     branches:
-      - main
+      - initial
 
 jobs:
   build:
@@ -37,7 +37,7 @@ jobs:
     name: Create Release
     needs: build
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/initial' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     
     steps:
       - name: Checkout code
@@ -63,9 +63,8 @@ jobs:
           prerelease: false
 
       - name: Upload Linux Release Asset
+        if: success()
         uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create.outputs.upload_url }}
           asset_path: ./binaries/initz_linux
@@ -73,9 +72,8 @@ jobs:
           asset_content_type: application/octet-stream
 
       - name: Upload Windows Release Asset
+        if: success()
         uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create.outputs.upload_url }}
           asset_path: ./binaries/initz_windows.exe
