@@ -23,7 +23,7 @@ jobs:
       run: go build -o initz_linux
 
     - name: Build Windows Binary
-      run: GOOS=windows GOARCH=amd64 go build -o initz_windows.exe main.go
+      run: GOOS=windows GOARCH=amd64 go build -o initz_windows_amd64.exe main.go
 
     - name: Archive binaries
       uses: actions/upload-artifact@v2
@@ -31,13 +31,13 @@ jobs:
         name: binaries
         path: |
           ./initz_linux
-          ./initz_windows.exe
+          ./initz_windows_amd64.exe
 
   release:
     name: Create Release
     needs: build
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/initial' && github.event_name == 'push'
 
     steps:
     - name: Checkout code
@@ -55,12 +55,12 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: v0.3.0-beta-2
-        release_name: v0.3.0-beta-2
+        tag_name: v0.3.0-beta-3
+        release_name: v0.3.0-beta-3
         body: |
-          Release with binarie.
+          Release with binaries.
         draft: false
-        prerelease: false
+        prerelease: true
 
     - name: Upload Linux Binary
       uses: actions/upload-release-asset@v1
@@ -78,6 +78,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./initz_windows.exe
-        asset_name: initz_windows.exe
+        asset_path: ./initz_windows_amd64.exe
+        asset_name: initz_windows_amd64.exe
         asset_content_type: application/octet-stream
